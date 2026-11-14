@@ -1,0 +1,31 @@
+-- STEP 1: Benchmark Unindexed Query Performance
+EXPLAIN ANALYZE
+SELECT order_id, customer_id, total_amount, created_at
+FROM orders
+WHERE status = 'delivered' AND created_at >= NOW() - INTERVAL '7 days'
+ORDER BY created_at DESC;
+
+/* 
+EXPLAIN ANALYZE Execution Plan (Before Optimisation):
+- Scan Type: Sequential Scan (Seq Scan) on orders table
+- Mechanism: Reads all 10,000 rows row-by-row to filter by status and date range.
+- Cost / Bottleneck: High I/O cost and explicit in-memory Sort operation on created_at.
+*/
+
+-- STEP 2: Create Composite B-Tree Index
+CREATE INDEX idx_orders_status_created 
+ON orders (status, created_at DESC);
+
+-- STEP 3: Benchmark Indexed Query Performance
+EXPLAIN ANALYZE
+SELECT order_id, customer_id, total_amount, created_at
+FROM orders
+WHERE status = 'delivered' AND created_at >= NOW() - INTERVAL '7 days'
+ORDER BY created_at DESC;
+
+/* 
+EXPLAIN ANALYZE Execution Plan (After Optimisation):
+- Scan Type: Index Scan using idx_orders_status_created
+- Mechanism: Uses the B-Tree index structure to directly access matching 'delivered' records in pre-sorted order.
+- Optimization Gain: Eliminates full sequential table scan and explicit sort step, reducing execution cost significantly.
+*/

@@ -1,0 +1,26 @@
+-- Seed Data Generation Script for Performance Analysis
+
+INSERT INTO users (full_name, email, phone_number, password_hash, role) VALUES
+('Amina Bello', 'amina@bitedash.ng', '+2348011111111', 'hash_pass1', 'customer'),
+('Chidi Okafor', 'chidi@bitedash.ng', '+2348022222222', 'hash_pass2', 'driver'),
+('Tunde Bakare', 'tunde@bitedash.ng', '+2348033333333', 'hash_pass3', 'restaurant_admin');
+
+INSERT INTO restaurants (owner_id, name, address, city) VALUES
+(3, 'Savor & Spice Kitchen', '12 Ring Road', 'Ibadan'),
+(3, 'Lagos Bukka Grill', '45 Allen Avenue', 'Lagos');
+
+INSERT INTO menu_items (restaurant_id, name, description, price) VALUES
+(1, 'Jollof Rice & Chicken', 'Smokey party jollof with fried plantain', 3500.00),
+(1, 'Egusi & Pounded Yam', 'Rich egusi soup with beef', 4500.00),
+(2, 'Suya Platter', 'Spicy beef suya with sliced onions', 5000.00);
+
+-- Generate 10,000 orders to establish realistic execution plan metrics
+INSERT INTO orders (customer_id, restaurant_id, status, total_amount, delivery_address, created_at)
+SELECT 
+    1, 
+    (1 + (g % 2)), 
+    CASE WHEN g % 3 = 0 THEN 'delivered'::order_status ELSE 'pending'::order_status END,
+    (2000 + (g % 4000))::numeric,
+    'Delivery Address No. ' || g,
+    NOW() - (g || ' minutes')::interval
+FROM generate_series(1, 10000) AS g;
